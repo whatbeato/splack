@@ -33,22 +33,34 @@ async function getChannelName(channelId) {
   }
 }
 
+const MAX_PLANETS_PER_GALAXY = 8;
+
+function galaxyGroupLabel(index) {
+  let label = '';
+  let n = index;
+  do {
+    label = String.fromCharCode(65 + (n % 26)) + label;
+    n = Math.floor(n / 26) - 1;
+  } while (n >= 0);
+  return label;
+}
+
 function splitLargeGalaxies(galaxies) {
-  const letters = ['A', 'B', 'C'];
   const result = [];
 
   for (const galaxy of galaxies) {
-    if (galaxy.planets.length < 8) {
+    if (galaxy.planets.length <= MAX_PLANETS_PER_GALAXY) {
       result.push(galaxy);
       continue;
     }
 
-    const groupSize = Math.ceil(galaxy.planets.length / letters.length);
-    letters.forEach((letter, i) => {
+    const groupCount = Math.ceil(galaxy.planets.length / MAX_PLANETS_PER_GALAXY);
+    const groupSize = Math.ceil(galaxy.planets.length / groupCount);
+    for (let i = 0; i < groupCount; i++) {
       const slice = galaxy.planets.slice(i * groupSize, (i + 1) * groupSize);
-      if (slice.length === 0) return;
-      result.push({ ...galaxy, name: `${galaxy.name} ${letter}`, planets: slice });
-    });
+      if (slice.length === 0) continue;
+      result.push({ ...galaxy, name: `${galaxy.name} ${galaxyGroupLabel(i)}`, planets: slice });
+    }
   }
 
   return result;
@@ -103,7 +115,8 @@ app.get('/', async (req, res, next) => {
 
     const galaxyNames = new Set(channels.map((c) => c.galaxy));
 
-    const displayPlanets = planets.filter((p) => p.galaxy !== 'Oblique Arm');
+    const hiddenGalaxies = new Set(['Oblique Arm', 'Elysian Spiral']);
+    const displayPlanets = planets.filter((p) => !hiddenGalaxies.has(p.galaxy));
 
     await Promise.all(channels.map((c) => getChannelName(c.name)));
 
