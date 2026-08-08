@@ -6,6 +6,9 @@ const emptyState = document.getElementById('empty-state');
 const data = JSON.parse(dataEl.textContent || '{"galaxies":[]}');
 const galaxies = data.galaxies || [];
 
+const textureLoader = new THREE.TextureLoader();
+const planetTextureCache = new Map();
+
 if (!galaxies.length) {
   emptyState.hidden = false;
 } else {
@@ -61,6 +64,14 @@ function makeLabelSprite(text, color) {
   const scale = 0.045;
   sprite.scale.set(width * scale, height * scale, 1);
   return sprite;
+}
+
+function loadPlanetTexture(url) {
+  if (planetTextureCache.has(url)) return planetTextureCache.get(url);
+  const texture = textureLoader.load(url);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  planetTextureCache.set(url, texture);
+  return texture;
 }
 
 function fibonacciPoint(index, total, radius) {
@@ -196,10 +207,15 @@ function init(galaxyData) {
       orbitGroup.add(ring);
 
       const planetColor = colorFor(planet.owner || planet.name, 65, 68);
-      const planetMesh = new THREE.Mesh(
-        new THREE.SphereGeometry(4.2, 20, 20),
-        new THREE.MeshStandardMaterial({ color: planetColor, roughness: 0.6, metalness: 0.1 })
-      );
+      const planetMaterial = new THREE.MeshStandardMaterial({
+        color: planet.ownerImageUrl ? 0xffffff : planetColor,
+        roughness: 0.6,
+        metalness: 0.1,
+      });
+      if (planet.ownerImageUrl) {
+        planetMaterial.map = loadPlanetTexture(planet.ownerImageUrl);
+      }
+      const planetMesh = new THREE.Mesh(new THREE.SphereGeometry(4.2, 20, 20), planetMaterial);
       planetMesh.position.set(orbitRadius, 0, 0);
       planetMesh.userData = {
         kind: 'planet',

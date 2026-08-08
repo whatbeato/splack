@@ -15,6 +15,47 @@ app.use('/static', express.static('public'));
 const userInfoCache = new Map();
 const channelNameCache = new Map();
 
+const ALLOWED_AVATAR_HOSTS = new Set([
+  'avatars.slack-edge.com',
+  'secure.gravatar.com',
+  'cachet.dunkirk.sh',
+]);
+
+function toProxiedAvatarUrl(imageUrl) {
+  if (!imageUrl) return null;
+  try {
+    const parsed = new URL(imageUrl);
+    if (parsed.protocol !== 'https:' || !ALLOWED_AVATAR_HOSTS.has(parsed.hostname)) return null;
+  } catch {
+    return null;
+  }
+  return `/avatar-proxy?url=${encodeURIComponent(imageUrl)}`;
+}
+
+app.get('/avatar-proxy', async (req, res) => {
+  const { url } = req.query;
+  let parsed;
+  try {
+    parsed = new URL(typeof url === 'string' ? url : '');
+  } catch {
+    return res.status(400).end();
+  }
+  if (parsed.protocol !== 'https:' || !ALLOWED_AVATAR_HOSTS.has(parsed.hostname)) {
+    return res.status(400).end();
+  }
+
+  try {
+    const upstream = await fetch(parsed.toString());
+    if (!upstream.ok) return res.status(502).end();
+    res.set('Content-Type', upstream.headers.get('content-type') || 'image/png');
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.send(Buffer.from(await upstream.arrayBuffer()));
+  } catch (error) {
+    console.error(`Failed to proxy avatar ${parsed.toString()}`, error);
+    res.status(502).end();
+  }
+});
+
 async function getChannelName(channelId) {
   if (channelNameCache.has(channelId)) return channelNameCache.get(channelId);
 
@@ -102,7 +143,12 @@ app.get('/', async (req, res, next) => {
       })
     );
 
-    const toPlanet = (p) => ({ id: p.id, name: p.name, owner: userInfoCache.get(p.user)?.displayName ?? p.username });
+    const toPlanet = (p) => ({
+      id: p.id,
+      name: p.name,
+      owner: userInfoCache.get(p.user)?.displayName ?? p.username,
+      ownerImageUrl: toProxiedAvatarUrl(userInfoCache.get(p.user)?.imageUrl),
+    });
 
     const leaderboard = uniqueUserIds
       .map((userId) => ({
