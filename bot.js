@@ -154,6 +154,21 @@ async function getUniqueGalaxyName() {
   throw new Error('Unable to generate a unique galaxy name after multiple attempts');
 }
 
+async function resolvePlanetMessage(messageTs, channel, status, userId) {
+  if (!messageTs) return { won: true };
+
+  try {
+    await db('planet_resolutions').insert({ message_ts: messageTs, channel, status, resolved_by: userId });
+    return { won: true };
+  } catch (error) {
+    if (error?.code === '23505') {
+      const existing = await db('planet_resolutions').select('status', 'resolved_by').where({ message_ts: messageTs }).first();
+      return { won: false, existing };
+    }
+    throw error;
+  }
+}
+
 async function ensureChannelRecord(client, channelId, logger) {
   const channelName = await getChannelName(client, channelId);
   const existingChannel = await db('channels').select('id', 'galaxy').where({ name: channelName }).first();
@@ -326,6 +341,19 @@ app.action('actionId-0', async ({ ack, body, client, logger }) => {
       return;
     }
 
+    const messageTs = body.message?.ts;
+    if (messageTs) {
+      const existing = await db('planet_resolutions').select('status').where({ message_ts: messageTs }).first();
+      if (existing) {
+        await client.chat.postEphemeral({
+          channel: channelId,
+          user: userId,
+          text: `Too slow! ${planet} was already ${existing.status} by someone else.`,
+        });
+        return;
+      }
+    }
+
     await client.views.open({
       trigger_id: body.trigger_id,
       view: {
@@ -376,6 +404,18 @@ app.action('actionId-1', async ({ ack, body, client, logger }) => {
   try {
     const { planet, galaxy } = JSON.parse(body.actions[0].value);
     const userId = body.user.id;
+    const channelId = body.channel.id;
+    const messageTs = body.message.ts;
+
+    const resolution = await resolvePlanetMessage(messageTs, channelId, 'exploded', userId);
+    if (!resolution.won) {
+      await client.chat.postEphemeral({
+        channel: channelId,
+        user: userId,
+        text: `Too slow! ${planet} was already ${resolution.existing.status} by someone else.`,
+      });
+      return;
+    }
 
     await client.chat.update({
       channel: body.channel.id,
@@ -419,6 +459,16 @@ app.view(CLAIM_MODAL_CALLBACK_ID, async ({ ack, body, view, client, logger }) =>
   const userId = body.user.id;
 
   try {
+    const resolution = await resolvePlanetMessage(metadata.message_ts, metadata.channel, 'claimed', userId);
+    if (!resolution.won) {
+      await client.chat.postEphemeral({
+        channel: metadata.channel,
+        user: userId,
+        text: `Too slow! ${metadata.planet} was already ${resolution.existing.status} by someone else.`,
+      });
+      return;
+    }
+
     await db('planets').insert({ name, user: userId, galaxy: metadata.galaxy });
 
     if (metadata.message_ts) {
