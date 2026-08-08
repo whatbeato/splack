@@ -522,7 +522,7 @@ app.command('/my-planets', async ({ ack, payload, respond, logger }) => {
 const LEADERBOARD_MEDALS = [':first_place_medal:', ':second_place_medal:', ':third_place_medal:'];
 const LEADERBOARD_LIMIT = 10;
 
-app.command('/splack-leaderboard', async ({ ack, respond, logger }) => {
+app.command('/splack-leaderboard', async ({ ack, respond, logger, client }) => {
   await ack();
 
   try {
@@ -542,12 +542,16 @@ app.command('/splack-leaderboard', async ({ ack, respond, logger }) => {
       .orderBy('planet_count', 'desc')
       .limit(LEADERBOARD_LIMIT);
 
+    const channelNames = await Promise.all(
+      channelRows.map((row) => getChannelName(client, row.channel_name))
+    );
+
     const userLines = userRows.length
       ? userRows.map((row, i) => `${LEADERBOARD_MEDALS[i] || `${i + 1}.`} <@${row.user_id}> — ${row.planet_count} planets`)
       : ['No planets claimed yet.'];
 
     const channelLines = channelRows.length
-      ? channelRows.map((row, i) => `${LEADERBOARD_MEDALS[i] || `${i + 1}.`} #${row.channel_name} — ${row.planet_count} planets`)
+      ? channelRows.map((row, i) => `${LEADERBOARD_MEDALS[i] || `${i + 1}.`} #${channelNames[i]} — ${row.planet_count} planets`)
       : ['No planets claimed yet.'];
 
     await respond({
