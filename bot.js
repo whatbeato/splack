@@ -71,14 +71,14 @@ async function get_planet_name(galaxyName) {
 
   const body = {
     model: 'qwen/qwen3-32b',
-    input: `You are a robot that returns creative, evocative planet names. Return me a single word name for a planet. Return ONLY the name, no explanations or thinking AT ALL.`,
+    input: `You are a robot that returns creative, evocative planet names. Return me a single word name for a planet. Return ONLY the name, no explanations or thinking AT ALL. /no_think`,
     max_output_tokens: 20,
     temperature: 1.5,
   };
 
   const res = await fetch(endpoint, {
     method: 'POST',
-    headers: {
+    headers: {  
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
     },
@@ -113,6 +113,8 @@ async function get_planet_name(galaxyName) {
     raw = extractText(data?.output ?? data);
   }
 
+  raw = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+
   const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
   const nameCandidateRegex = /^[^\s'"“”]+(?:-[^\s'"“”]+)*$/;
 
@@ -123,6 +125,11 @@ async function get_planet_name(galaxyName) {
       candidate = line;
       break;
     }
+  }
+
+  if (!candidate) {
+    const words = raw.match(/[A-Za-z][A-Za-z'-]*/g);
+    if (words && words.length) candidate = words[words.length - 1];
   }
 
   if (!candidate && lines.length) candidate = lines[0];
