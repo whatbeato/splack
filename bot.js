@@ -71,7 +71,7 @@ async function get_planet_name(galaxyName) {
 
   const body = {
     model: 'qwen/qwen3-32b',
-    input: `You are a creative assistant that invents concise, evocative planet names. Give me a single-word or short hyphenated name for a fictional planet. Return ONLY the name, no explanations or thinking AT ALL.`,
+    input: `You are a robot that returns creative, evocative planet names. Return me a single word name for a planet. Return ONLY the name, no explanations or thinking AT ALL.`,
     max_output_tokens: 20,
     temperature: 1.5,
   };
