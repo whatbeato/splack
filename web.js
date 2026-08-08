@@ -13,6 +13,25 @@ nunjucks.configure('views', {
 app.use('/static', express.static('public'));
 
 const userInfoCache = new Map();
+const channelNameCache = new Map();
+
+async function getChannelName(channelId) {
+  if (channelNameCache.has(channelId)) return channelNameCache.get(channelId);
+
+  try {
+    const res = await fetch(`https://slack.com/api/conversations.info?channel=${channelId}`, {
+      headers: { Authorization: `Bearer ${process.env.SLACK_BOT_TOKEN}` },
+    });
+    const data = await res.json();
+    const name = data?.ok && data.channel?.name ? data.channel.name : channelId;
+    channelNameCache.set(channelId, name);
+    return name;
+  } catch (error) {
+    console.error(`Failed to fetch channel name for ${channelId}`, error);
+    channelNameCache.set(channelId, channelId);
+    return channelId;
+  }
+}
 
 function splitLargeGalaxies(galaxies) {
   const letters = ['A', 'B', 'C'];
@@ -86,10 +105,12 @@ app.get('/', async (req, res, next) => {
 
     const displayPlanets = planets.filter((p) => p.galaxy !== 'Oblique Arm');
 
+    await Promise.all(channels.map((c) => getChannelName(c.name)));
+
     const galaxies = channels
       .map((c) => ({
         name: c.galaxy,
-        channel: c.name,
+        channel: channelNameCache.get(c.name) ?? c.name,
         planets: displayPlanets.filter((p) => p.galaxy === c.galaxy).map(toPlanet),
       }))
       .filter((g) => g.planets.length > 0);
@@ -101,14 +122,19 @@ app.get('/', async (req, res, next) => {
         if (!byGalaxy.has(p.galaxy)) byGalaxy.set(p.galaxy, []);
         byGalaxy.get(p.galaxy).push(toPlanet(p));
       }
-      for (const [name, list] of byGalaxy) {
-        galaxies.push({ name, channel: null, planets: list });
+      for (const [channelId, list] of byGalaxy) {
+        const channelName = await getChannelName(channelId);
+        galaxies.push({ name: channelName, channel: channelName, planets: list });
       }
     }
 
+    const channelLeaderboard = galaxies
+      .map((g) => ({ channel: g.channel, galaxy: g.name, planetCount: g.planets.length }))
+      .sort((a, b) => b.planetCount - a.planetCount);
+
     const graphData = JSON.stringify({ galaxies: splitLargeGalaxies(galaxies) }).replace(/</g, '\\u003c');
 
-    res.render('index.html', { graphData, leaderboard });
+    res.render('index.html', { graphData, leaderboard, channelLeaderboard });
   } catch (error) {
     next(error);
   }

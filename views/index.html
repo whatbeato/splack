@@ -36,10 +36,13 @@
     No galaxies have been discovered yet. Get chatting in Slack to find one!
   </p>
 
-  {% if leaderboard.length %}
+  {% if leaderboard.length or channelLeaderboard.length %}
     <aside class="hud hud-leaderboard">
-      <h2 class="leaderboard-title">leaderboard</h2>
-      <ol class="leaderboard-list">
+      <div class="leaderboard-tabs">
+        <button class="leaderboard-tab active" type="button" data-panel="users">users</button>
+        <button class="leaderboard-tab" type="button" data-panel="channels">channels</button>
+      </div>
+      <ol class="leaderboard-list" data-panel="users">
         {% for entry in leaderboard %}
           <li class="leaderboard-row">
             <span class="leaderboard-rank">{{ loop.index }}</span>
@@ -53,10 +56,30 @@
           </li>
         {% endfor %}
       </ol>
+      <ol class="leaderboard-list" data-panel="channels" hidden>
+        {% for entry in channelLeaderboard %}
+          <li class="leaderboard-row">
+            <span class="leaderboard-rank">{{ loop.index }}</span>
+            <span class="leaderboard-name">#{{ entry.channel }}</span>
+            <span class="leaderboard-count">{{ entry.planetCount }}</span>
+          </li>
+        {% endfor %}
+      </ol>
     </aside>
   {% endif %}
 
   <script type="application/json" id="graph-data">{{ graphData | safe }}</script>
   <script type="module" src="/static/js/scene.js"></script>
+  <script>
+    document.querySelectorAll('.leaderboard-tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.leaderboard-tab').forEach((t) => t.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelectorAll('.leaderboard-list').forEach((list) => {
+          list.hidden = list.dataset.panel !== tab.dataset.panel;
+        });
+      });
+    });
+  </script>
 </body>
 </html>

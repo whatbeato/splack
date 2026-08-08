@@ -148,13 +148,38 @@ body {
   }
 }
 
-.leaderboard-title {
+.leaderboard-tabs {
+  display: flex;
+  gap: 0.4rem;
   margin: 0 0 0.75rem;
   padding: 0 0.5rem;
+}
+
+.leaderboard-tab {
+  flex: 1;
+  background: none;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 0.35rem 0.5rem;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--accent-2);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.leaderboard-tab:hover {
+  color: var(--text);
+}
+
+.leaderboard-tab.active {
+  color: var(--bg);
+  background: var(--accent-2);
+  border-color: var(--accent-2);
+}
+
+.leaderboard-list[hidden] {
+  display: none;
 }
 
 .leaderboard-list {
