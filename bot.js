@@ -3,6 +3,7 @@ import 'dotenv/config';
 import db from './knex.js';
 import { readFile } from 'fs/promises';
 
+const NON_OPTED_IN_ALLOWED_CHANNEL = 'C0BNS7VMW1H';
 const GALAXY_FETCH_ATTEMPTS = 10;
 const GALAXY_NAMES_FILE = new URL('./galaxy_names.txt', import.meta.url);
 let GALAXY_NAMES = null;
@@ -196,7 +197,7 @@ app.event('message', async ({ event, client, logger }) => {
       .where({ user_id: event.user })
       .first();
 
-    if (!optedInUser) {
+    if (!optedInUser && event.channel !== NON_OPTED_IN_ALLOWED_CHANNEL) {
       return;
     }
 
@@ -274,6 +275,18 @@ app.event('message', async ({ event, client, logger }) => {
             ],
           },
         ];
+
+        if (!optedInUser) {
+          blocks.push({
+            type: 'context',
+            elements: [
+              {
+                type: 'mrkdwn',
+                text: 'You are not opted in - Run /splack-opt-in to use this bot in other channels',
+              },
+            ],
+          });
+        }
 
         await client.chat.postMessage({
           channel: event.channel,
