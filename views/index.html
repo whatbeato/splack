@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>splack &middot; galaxy map</title>
+  <link rel="icon" type="image/png" href="/static/logo.png" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="scene-container"></div>
+
+  <header class="hud hud-top">
+    <img class="hud-logo" src="/static/dizzy.png" alt="splack" />
+    <span class="hud-sub">galaxy map</span>
+  </header>
+
+  <p class="hud hud-hint">drag to rotate &middot; scroll to zoom &middot; click a planet or galaxy</p>
+
+  <aside class="hud hud-panel" id="info-panel" hidden>
+    <button class="panel-close" id="info-panel-close" aria-label="Close">&times;</button>
+    <p class="panel-kind" id="info-kind"></p>
+    <h2 class="panel-title" id="info-title"></h2>
+    <p class="panel-detail" id="info-detail"></p>
+  </aside>
+
+  <p class="hud hud-empty" id="empty-state" hidden>
+    No galaxies have been discovered yet. Get chatting in Slack to find one!
+  </p>
+
+  {% if leaderboard.length %}
+    <aside class="hud hud-leaderboard">
+      <h2 class="leaderboard-title">leaderboard</h2>
+      <ol class="leaderboard-list">
+        {% for entry in leaderboard %}
+          <li class="leaderboard-row">
+            <span class="leaderboard-rank">{{ loop.index }}</span>
+            {% if entry.imageUrl %}
+              <img class="leaderboard-avatar" src="{{ entry.imageUrl }}" alt="" />
+            {% else %}
+              <span class="leaderboard-avatar leaderboard-avatar-fallback"></span>
+            {% endif %}
+            <span class="leaderboard-name">{{ entry.displayName }}</span>
+            <span class="leaderboard-count">{{ entry.planetCount }}</span>
+          </li>
+        {% endfor %}
+      </ol>
+    </aside>
+  {% endif %}
+
+  <script type="application/json" id="graph-data">{{ graphData | safe }}</script>
+  <script type="module" src="/static/js/scene.js"></script>
+</body>
+</html>

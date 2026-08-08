@@ -1,9 +1,14 @@
 {
+	"scripts": {
+		"web": "node web.js"
+	},
 	"dependencies": {
 		"@slack/bolt": "^5.0.0",
 		"@types/node": "^26.1.2",
 		"dotenv": "^17.4.2",
+		"express": "^5.2.1",
 		"knex": "^3.3.0",
+		"nunjucks": "^3.2.4",
 		"pg": "^8.22.0"
 	},
 	"type": "module"
