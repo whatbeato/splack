@@ -22,7 +22,7 @@ async function loadGalaxyNames() {
 const receiver = new ExpressReceiver({
   signingSecret: process.env.SLACK_SIGNING_SECRET,
   endpoints: {
-    commands: '/splack-opt-in',
+    commands: ['/splack-opt-in', '/my-planets', '/splack-leaderboard'],
     events: '/slack/events',
   },
 });
