@@ -475,6 +475,108 @@ app.command('/splack-opt-in', async ({ ack, payload, respond, logger }) => {
   }
 });
 
+app.command('/my-planets', async ({ ack, payload, respond, logger }) => {
+  await ack();
+
+  const userId = payload.user_id;
+
+  try {
+    const planets = await db('planets')
+      .select('name', 'galaxy')
+      .where({ user: userId })
+      .orderBy('galaxy');
+
+    if (!planets.length) {
+      await respond({
+        text: "You haven't claimed any planets yet. Keep chatting to discover some!",
+        response_type: 'ephemeral',
+      });
+      return;
+    }
+
+    const lines = planets.map((p) => `:ringed_planet: *${p.name}* — ${p.galaxy}`);
+
+    await respond({
+      response_type: 'ephemeral',
+      text: `Your planets (${planets.length})`,
+      blocks: [
+        {
+          type: 'header',
+          text: { type: 'plain_text', text: `:ringed_planet: Your planets (${planets.length})`, emoji: true },
+        },
+        {
+          type: 'section',
+          text: { type: 'mrkdwn', text: lines.join('\n') },
+        },
+      ],
+    });
+  } catch (error) {
+    logger.error('Failed to fetch planets', error);
+    await respond({
+      text: 'Something went wrong fetching your planets. Please try again later.',
+      response_type: 'ephemeral',
+    });
+  }
+});
+
+const LEADERBOARD_MEDALS = [':first_place_medal:', ':second_place_medal:', ':third_place_medal:'];
+const LEADERBOARD_LIMIT = 10;
+
+app.command('/splack-leaderboard', async ({ ack, respond, logger }) => {
+  await ack();
+
+  try {
+    const userRows = await db('planets')
+      .join('users', 'planets.user', 'users.user_id')
+      .select('users.user_id')
+      .count('planets.id as planet_count')
+      .groupBy('users.user_id')
+      .orderBy('planet_count', 'desc')
+      .limit(LEADERBOARD_LIMIT);
+
+    const channelRows = await db('planets')
+      .join('channels', 'planets.galaxy', 'channels.galaxy')
+      .select('channels.name as channel_name')
+      .count('planets.id as planet_count')
+      .groupBy('channels.name')
+      .orderBy('planet_count', 'desc')
+      .limit(LEADERBOARD_LIMIT);
+
+    const userLines = userRows.length
+      ? userRows.map((row, i) => `${LEADERBOARD_MEDALS[i] || `${i + 1}.`} <@${row.user_id}> — ${row.planet_count} planets`)
+      : ['No planets claimed yet.'];
+
+    const channelLines = channelRows.length
+      ? channelRows.map((row, i) => `${LEADERBOARD_MEDALS[i] || `${i + 1}.`} #${row.channel_name} — ${row.planet_count} planets`)
+      : ['No planets claimed yet.'];
+
+    await respond({
+      response_type: 'in_channel',
+      text: 'Splack Leaderboard',
+      blocks: [
+        {
+          type: 'header',
+          text: { type: 'plain_text', text: ':trophy: Splack Leaderboard', emoji: true },
+        },
+        {
+          type: 'section',
+          text: { type: 'mrkdwn', text: `*Top Explorers*\n${userLines.join('\n')}` },
+        },
+        {
+          type: 'section',
+          text: { type: 'mrkdwn', text: `*Top Galaxies*\n${channelLines.join('\n')}` },
+        },
+      ],
+    });
+  } catch (error) {
+    logger.error('Failed to build leaderboard', error);
+    await respond({
+      text: 'Something went wrong building the leaderboard. Please try again later.',
+      response_type: 'ephemeral',
+    });
+  }
+});
+
 (async () => {
   await app.start(process.env.PORT || 3000);
 
