@@ -555,7 +555,7 @@ app.command('/splack-leaderboard', async ({ ack, respond, logger, client }) => {
       : ['No planets claimed yet.'];
 
     await respond({
-      response_type: 'in_channel',
+      response_type: 'ephemeral',
       text: 'Splack Leaderboard',
       blocks: [
         {

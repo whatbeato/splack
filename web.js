@@ -145,7 +145,8 @@ app.get('/', async (req, res, next) => {
       .map((g) => ({ channel: g.channel, galaxy: g.name, planetCount: g.planets.length }))
       .sort((a, b) => b.planetCount - a.planetCount);
 
-    const graphData = JSON.stringify({ galaxies: splitLargeGalaxies(galaxies) }).replace(/</g, '\\u003c');
+    const visualizedGalaxies = galaxies.filter((g) => g.planets.length > 1);
+    const graphData = JSON.stringify({ galaxies: splitLargeGalaxies(visualizedGalaxies) }).replace(/</g, '\\u003c');
 
     res.render('index.html', { graphData, leaderboard, channelLeaderboard });
   } catch (error) {
