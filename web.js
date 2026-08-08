@@ -107,6 +107,10 @@ function splitLargeGalaxies(galaxies) {
   return result;
 }
 
+const DISPLAY_NAME_OVERRIDES = new Map([
+  ['U08B60DCYG2', 'maddy'],
+]);
+
 async function getUserInfo(userId, fallbackName) {
   const fallback = { displayName: fallbackName, imageUrl: null };
   if (!userId) return fallback;
@@ -116,11 +120,15 @@ async function getUserInfo(userId, fallbackName) {
     const res = await fetch(`https://cachet.dunkirk.sh/users/${userId}`);
     if (!res.ok) throw new Error(`cachet request failed: ${res.status}`);
     const data = await res.json();
-    const info = { displayName: data?.displayName || fallbackName, imageUrl: data?.imageUrl || null };
+    const info = {
+      displayName: DISPLAY_NAME_OVERRIDES.get(userId) || data?.displayName || fallbackName,
+      imageUrl: data?.imageUrl || null,
+    };
     userInfoCache.set(userId, info);
     return info;
   } catch (error) {
     console.error(`Failed to fetch user info for ${userId}`, error);
+    if (DISPLAY_NAME_OVERRIDES.has(userId)) fallback.displayName = DISPLAY_NAME_OVERRIDES.get(userId);
     userInfoCache.set(userId, fallback);
     return fallback;
   }
