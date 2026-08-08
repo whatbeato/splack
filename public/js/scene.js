@@ -106,7 +106,7 @@ function init(galaxyData) {
   const scene = new THREE.Scene();
   scene.fog = new THREE.FogExp2(0x02010a, 0.0009);
 
-  const galaxyRadius = Math.max(120, galaxyData.length * 20);
+  const galaxyRadius = Math.max(120, galaxyData.length * 25);
 
   const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 1, 8000);
   camera.position.set(0, galaxyRadius * 0.6, galaxyRadius * 1.6);
@@ -180,6 +180,7 @@ function init(galaxyData) {
       const orbitGroup = new THREE.Group();
       orbitGroup.rotation.x = tilt;
       orbitGroup.userData.spinSpeed = 0.06 + (pIndex % 5) * 0.015 + gIndex * 0.001;
+      orbitGroup.userData.phase = Math.random() * Math.PI * 2;
       galaxyGroup.add(orbitGroup);
 
       const orbitRadius = orbitBaseRadius + pIndex * orbitGap;
@@ -287,7 +288,7 @@ function init(galaxyData) {
     galaxyGroups.forEach((group) => {
       group.children.forEach((child) => {
         if (child.userData && typeof child.userData.spinSpeed === 'number') {
-          child.rotation.y = elapsed * child.userData.spinSpeed;
+          child.rotation.y = elapsed * child.userData.spinSpeed + (child.userData.phase || 0);
         }
       });
 

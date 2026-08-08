@@ -14,6 +14,27 @@ app.use('/static', express.static('public'));
 
 const userInfoCache = new Map();
 
+function splitLargeGalaxies(galaxies) {
+  const letters = ['A', 'B', 'C'];
+  const result = [];
+
+  for (const galaxy of galaxies) {
+    if (galaxy.planets.length < 8) {
+      result.push(galaxy);
+      continue;
+    }
+
+    const groupSize = Math.ceil(galaxy.planets.length / letters.length);
+    letters.forEach((letter, i) => {
+      const slice = galaxy.planets.slice(i * groupSize, (i + 1) * groupSize);
+      if (slice.length === 0) return;
+      result.push({ ...galaxy, name: `${galaxy.name} ${letter}`, planets: slice });
+    });
+  }
+
+  return result;
+}
+
 async function getUserInfo(userId, fallbackName) {
   const fallback = { displayName: fallbackName, imageUrl: null };
   if (!userId) return fallback;
@@ -83,7 +104,7 @@ app.get('/', async (req, res, next) => {
       }
     }
 
-    const graphData = JSON.stringify({ galaxies }).replace(/</g, '\\u003c');
+    const graphData = JSON.stringify({ galaxies: splitLargeGalaxies(galaxies) }).replace(/</g, '\\u003c');
 
     res.render('index.html', { graphData, leaderboard });
   } catch (error) {
