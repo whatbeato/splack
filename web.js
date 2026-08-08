@@ -84,15 +84,17 @@ app.get('/', async (req, res, next) => {
 
     const galaxyNames = new Set(channels.map((c) => c.galaxy));
 
+    const displayPlanets = planets.filter((p) => p.galaxy !== 'Oblique Arm');
+
     const galaxies = channels
       .map((c) => ({
         name: c.galaxy,
         channel: c.name,
-        planets: planets.filter((p) => p.galaxy === c.galaxy).map(toPlanet),
+        planets: displayPlanets.filter((p) => p.galaxy === c.galaxy).map(toPlanet),
       }))
       .filter((g) => g.planets.length > 0);
 
-    const orphanPlanets = planets.filter((p) => !galaxyNames.has(p.galaxy));
+    const orphanPlanets = displayPlanets.filter((p) => !galaxyNames.has(p.galaxy));
     if (orphanPlanets.length) {
       const byGalaxy = new Map();
       for (const p of orphanPlanets) {
