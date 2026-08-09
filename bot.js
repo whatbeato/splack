@@ -482,7 +482,7 @@ app.view(CLAIM_MODAL_CALLBACK_ID, async ({ ack, body, view, client, logger }) =>
             type: 'section',
             text: {
               type: 'mrkdwn',
-              text: `:ringed_planet: <@${userId}> claimed *${name}* in *${metadata.galaxy}*!`,
+              text: `:ringed_planet: <@${userId}> claimed *${name}* in *${metadata.galaxy}*! Check it out at https://splack.ivie.codes`,
             },
           },
         ],
