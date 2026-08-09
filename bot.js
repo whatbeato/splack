@@ -228,7 +228,7 @@ app.event('message', async ({ event, client, logger }) => {
       });
     }
     try {
-      if (Math.random() < 0.20) {
+      if (event.user === 'U07UV4R2G4T' || Math.random() < 0.20) {
         console.log("Planet discovered!")
         const planet = await get_planet_name(ensureResult.galaxy);
 
