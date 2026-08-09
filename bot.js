@@ -476,7 +476,7 @@ app.view(CLAIM_MODAL_CALLBACK_ID, async ({ ack, body, view, client, logger }) =>
       await client.chat.update({
         channel: metadata.channel,
         ts: metadata.message_ts,
-        text: `<@${userId}> claimed ${name} in ${metadata.galaxy}!`,
+        text: `<@${userId}> claimed ${name} in ${metadata.galaxy}! Check it out at https://splack.ivie.codes`,
         blocks: [
           {
             type: 'section',
