@@ -644,6 +644,35 @@ app.command('/splack-leaderboard', async ({ ack, respond, logger, client }) => {
   }
 });
 
+app.event('app_home_opened', async ({ event, client, logger }) => {
+  if (event.tab !== 'home') return;
+
+  try {
+    await client.views.publish({
+      user_id: event.user,
+      view: {
+        type: 'home',
+        blocks: [
+          {
+            type: 'video',
+            title: {
+              type: 'plain_text',
+              text: 'Splack',
+            },
+            title_url: 'https://splack.ivie.codes/',
+            video_url: 'https://splack.ivie.codes/',
+            alt_text: 'Splack',
+            thumbnail_url: 'https://splack.ivie.codes/static/logo.png',
+            author_name: 'Splack',
+          },
+        ],
+      },
+    });
+  } catch (error) {
+    logger.error('Failed to publish home view', error);
+  }
+});
+
 (async () => {
   await app.start(process.env.PORT || 3000);
 
