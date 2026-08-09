@@ -20,3 +20,7 @@ If you're in the Hack Club Slack, you can simply opt in by running `/splack-opt-
 If you'd just like to test it out for one time without opting in, you may join [#splack-playground](https://hackclub.enterprise.slack.com/archives/C0BNS7VMW1H) and start dropping messages there.
 
 You can also deploy the bot yourself on your own Slack workspace.
+
+## Credits
+
+Made by [@whatbeato](https://headpats.you/) and [@Charmunks](https://ivie.codes/)!
