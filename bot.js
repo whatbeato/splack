@@ -137,8 +137,11 @@ async function get_planet_name(galaxyName) {
   if (!candidate) throw new Error('Unexpected response format from Hack Club AI');
 
   candidate = candidate.replace(/^['"“”]+|['"“”]+$/g, '').trim();
+  // the model output ends up in slack messages too, so hold it to the same
+  // character rules as user-chosen names
+  candidate = candidate.replace(/[^\p{L}\p{N} '\-.]/gu, '').replace(/\s+/g, ' ').trim();
   if (!candidate) throw new Error('Unexpected response format from Hack Club AI');
-  return candidate;
+  return candidate.slice(0, PLANET_NAME_MAX_LENGTH);
 }
 
 async function getUniqueGalaxyName() {
@@ -322,6 +325,22 @@ const CLAIM_MODAL_CALLBACK_ID = 'claim_planet_modal';
 const CLAIM_NAME_BLOCK_ID = 'planet_name_block';
 const CLAIM_NAME_ACTION_ID = 'planet_name_input';
 
+// letters, numbers, spaces, hyphens, apostrophes and periods only. keeps out the
+// characters slack needs to build a mention (<, >, @, !, &) plus mrkdwn formatting.
+const PLANET_NAME_ALLOWED = /^[\p{L}\p{N} '\-.]+$/u;
+const PLANET_NAME_MAX_LENGTH = 100;
+
+function validatePlanetName(name) {
+  if (!name) return 'Planet names need at least one letter or number.';
+  if (name.length > PLANET_NAME_MAX_LENGTH) {
+    return `Planet names must be ${PLANET_NAME_MAX_LENGTH} characters or fewer.`;
+  }
+  if (!PLANET_NAME_ALLOWED.test(name)) {
+    return 'Planet names can only use letters, numbers, spaces, hyphens, apostrophes and periods.';
+  }
+  return null;
+}
+
 app.action('actionId-0', async ({ ack, body, client, logger }) => {
   await ack();
 
@@ -382,11 +401,15 @@ app.action('actionId-0', async ({ ack, body, client, logger }) => {
             block_id: CLAIM_NAME_BLOCK_ID,
             optional: true,
             label: { type: 'plain_text', text: 'Planet name', emoji: true },
-            hint: { type: 'plain_text', text: `Leave blank to keep ${planet}`, emoji: true },
+            hint: {
+              type: 'plain_text',
+              text: `Letters, numbers, spaces, hyphens, apostrophes and periods only. Leave blank to keep ${planet}`,
+              emoji: true,
+            },
             element: {
               type: 'plain_text_input',
               action_id: CLAIM_NAME_ACTION_ID,
-              max_length: 100,
+              max_length: PLANET_NAME_MAX_LENGTH,
               placeholder: { type: 'plain_text', text: planet, emoji: true },
             },
           },
@@ -443,16 +466,22 @@ app.action('actionId-1', async ({ ack, body, client, logger }) => {
 
 app.view(CLAIM_MODAL_CALLBACK_ID, async ({ ack, body, view, client, logger }) => {
   const metadata = JSON.parse(view.private_metadata);
-  const submittedName = view.state.values[CLAIM_NAME_BLOCK_ID]?.[CLAIM_NAME_ACTION_ID]?.value;
-  const name = (submittedName || '').trim() || metadata.planet;
+  const submittedName = (view.state.values[CLAIM_NAME_BLOCK_ID]?.[CLAIM_NAME_ACTION_ID]?.value || '')
+    .replace(/\s+/g, ' ')
+    .trim();
 
-  if (name.length > 100) {
-    await ack({
-      response_action: 'errors',
-      errors: { [CLAIM_NAME_BLOCK_ID]: 'Planet names must be 100 characters or fewer.' },
-    });
-    return;
+  if (submittedName) {
+    const nameError = validatePlanetName(submittedName);
+    if (nameError) {
+      await ack({
+        response_action: 'errors',
+        errors: { [CLAIM_NAME_BLOCK_ID]: nameError },
+      });
+      return;
+    }
   }
+
+  const name = submittedName || metadata.planet;
 
   await ack();
 
@@ -641,6 +670,35 @@ app.command('/splack-leaderboard', async ({ ack, respond, logger, client }) => {
       text: 'Something went wrong building the leaderboard. Please try again later.',
       response_type: 'ephemeral',
     });
+  }
+});
+
+app.event('app_home_opened', async ({ event, client, logger }) => {
+  if (event.tab !== 'home') return;
+
+  try {
+    await client.views.publish({
+      user_id: event.user,
+      view: {
+        type: 'home',
+        blocks: [
+          {
+            type: 'video',
+            title: {
+              type: 'plain_text',
+              text: 'Splack',
+            },
+            title_url: 'https://splack.ivie.codes/',
+            video_url: 'https://splack.ivie.codes/',
+            alt_text: 'Splack',
+            thumbnail_url: 'https://splack.ivie.codes/static/logo.png',
+            author_name: 'Splack',
+          },
+        ],
+      },
+    });
+  } catch (error) {
+    logger.error('Failed to publish home view', error);
   }
 });
 

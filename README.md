@@ -11,7 +11,7 @@ Each Slack channel is assigned a galaxy when an opted-in user sends a message in
 
 <img width="1148" height="720" alt="Cap 2026-08-09 at 08 02 49" src="https://github.com/user-attachments/assets/6771623b-1502-4efe-90da-0ca875dbb49b" />
 
-Then, you can check out the visualiser, available on [splack.ivie.codes](https://splack.ivie.codes/)
+Then, you can check out the visualiser, available on the Home page of the bot or [splack.ivie.codes](https://splack.ivie.codes/).
 
 ## Try it out!
 
