@@ -15,7 +15,7 @@ Then, you can check out the visualiser, available on the Home page of the bot or
 
 ## Try it out!
 
-If you're in the Hack Club Slack, you can simply opt in by running `/splack-opt-in` and adding the bot to any private channel. The bot automatically monitors public channels for opted in users.
+If you're in the Hack Club Slack, you can simply opt in by running `/splack-opt-in` and adding the bot to any private channel. The bot automatically monitors public channels for opted in users. Run `/splack-opt-out` at any time to stop being monitored outside of #splack-playground — your claimed planets stay yours.
 
 If you'd just like to test it out for one time without opting in, you may join [#splack-playground](https://hackclub.enterprise.slack.com/archives/C0BNS7VMW1H) and start dropping messages there.
 
