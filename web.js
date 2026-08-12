@@ -195,11 +195,14 @@ app.get('/', async (req, res, next) => {
       }
     }
 
-    const channelLeaderboard = galaxies
+    const MAX_GALAXY_PLANETS_DISPLAYED = 150;
+    const displayableGalaxies = galaxies.filter((g) => g.planets.length <= MAX_GALAXY_PLANETS_DISPLAYED);
+
+    const channelLeaderboard = displayableGalaxies
       .map((g) => ({ channel: g.channel, galaxy: g.name, planetCount: g.planets.length }))
       .sort((a, b) => b.planetCount - a.planetCount);
 
-    const visualizedGalaxies = galaxies.filter((g) => g.planets.length > 1);
+    const visualizedGalaxies = displayableGalaxies.filter((g) => g.planets.length > 1);
     const graphData = JSON.stringify({ galaxies: splitLargeGalaxies(visualizedGalaxies) }).replace(/</g, '\\u003c');
 
     res.render('index.html', { graphData, leaderboard, channelLeaderboard });
