@@ -23,7 +23,7 @@ async function loadGalaxyNames() {
 const receiver = new ExpressReceiver({
   signingSecret: process.env.SLACK_SIGNING_SECRET,
   endpoints: {
-    commands: ['/splack-opt-in', '/my-planets', '/splack-leaderboard'],
+    commands: ['/splack-opt-in', '/splack-opt-out', '/my-planets', '/splack-leaderboard'],
     events: '/slack/events',
   },
 });
@@ -562,6 +562,36 @@ app.command('/splack-opt-in', async ({ ack, payload, respond, logger }) => {
     logger.error('Failed to opt in user', error);
     await respond({
       text: 'There was an error saving your opt-in. Please try again later.',
+      response_type: 'ephemeral',
+    });
+  }
+});
+
+app.command('/splack-opt-out', async ({ ack, payload, respond, logger }) => {
+  await ack();
+
+  const userId = payload.user_id;
+
+  if (!userId) {
+    logger.error('Missing Slack user info for /splack-opt-out command', { payload });
+    await respond({
+      text: 'Unable to opt you out right now. Please try again later.',
+      response_type: 'ephemeral',
+    });
+    return;
+  }
+
+  try {
+    await db('users').where({ user_id: userId }).del();
+
+    await respond({
+      text: 'You have been opted out. You will only be able to discover planets in #splack-playground until you run `/splack-opt-in` again. Your claimed planets are safe.',
+      response_type: 'ephemeral',
+    });
+  } catch (error) {
+    logger.error('Failed to opt out user', error);
+    await respond({
+      text: 'There was an error saving your opt-out. Please try again later.',
       response_type: 'ephemeral',
     });
   }
