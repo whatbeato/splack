@@ -109,6 +109,9 @@ function splitLargeGalaxies(galaxies) {
 
 const DISPLAY_NAME_OVERRIDES = new Map([
   ['U08B60DCYG2', 'maddy'],
+  ['U0B2VTYER33', 'Lily'],
+  ['U08R4SW3FU7', 'Addy'],
+  ['U07F6FMJ97U', 'stellenium'],
 ]);
 
 async function getUserInfo(userId, fallbackName) {
